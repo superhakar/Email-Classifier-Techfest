@@ -29,7 +29,7 @@ def SVD(code):
   def tokenize(s):
     return TOKENIZER.sub(r' \1 ', s).split()
   tfidf_vectorizer = TfidfVectorizer(
-        ngram_range=(1,4),
+        ngram_range=(1,1),
         tokenizer=tokenize,
         min_df=3,
         max_df=0.9,
@@ -169,7 +169,7 @@ def train(ngram,n_estimators,embedding_dim,vocab_size,max_length,num_epochs):
   model.save('Model/')
   return oob,crossval,history.history['accuracy'][-1],history.history['loss'][-1]
 
-def test():
+def test(dissimilar):
   loaded_tfidf = pickle.load(open('Model/tfidf.sav', 'rb'))
   filename = 'Model/model.sav'
   loaded_model = pickle.load(open(filename, 'rb'))
@@ -195,12 +195,13 @@ def test():
     code.append(i.replace("\n",""))
   f.close()
   df = pd.DataFrame()
-  df['name'] = test['name']
+  df['File Name'] = test['name']
   ystr = []
   for i in range(len(y_pred)):
     ystr.append(code[int(y_pred[i])])
-  df['class'] = ystr
-  df.to_csv('Result/result.csv')
+  df['Classified Category'] = ystr
+  df['Confidence'] = dissimilar
+  df.to_csv('Result/result.csv', index = False)
 
 
 def Similarity():
@@ -211,7 +212,7 @@ def Similarity():
       return TOKENIZER.sub(r' \1 ', s).split()
 
   tfidf_vectorizer = TfidfVectorizer(
-          ngram_range=(1,4),
+          ngram_range=(1, 1),
           tokenizer=tokenize,
           min_df=3,
           max_df=0.95,
@@ -224,13 +225,14 @@ def Similarity():
 
   xtrain = tfidf_vectorizer.transform(train_df['mails']) 
   xtest = tfidf_vectorizer.transform(test_df['mails'])
-  birch = Birch(n_clusters=None, threshold=0.93, branching_factor=10)
+  birch = Birch(n_clusters=None, threshold=0.852, branching_factor=50)
   birch.fit(xtrain)
   birch.partial_fit(xtest)
   set_diff = set(np.unique(birch.predict(xtest))) - set(np.unique(birch.predict(xtrain))) 
   count = 0
   out = []
   ins = []
+  dissimilar = np.zeros(test_df.values.shape[0])
   for j, i in enumerate(birch.predict(xtest)):
       if i in set_diff:
           count += 1
@@ -240,8 +242,9 @@ def Similarity():
 
   sim_score = 1 - count/xtest.shape[0]
   out, ins = np.asarray(out, dtype=int), np.asarray(ins, dtype=int)
+  dissimilar[ins] += 1
   tsvd = TruncatedSVD(n_components=2)
   tsvd.fit(vstack([xtrain, xtest], format='csr'))
   xtrain2d = tsvd.transform(xtrain)
   xtest2d = tsvd.transform(xtest)
-  return sim_score*100,xtrain2d,xtest2d,ins,out
+  return sim_score*100,xtrain2d,xtest2d,ins,out, dissimilar

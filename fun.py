@@ -67,6 +67,9 @@ def converttest():
         s = str(msg.subject) + str(msg.body)
         test_messages.append(s)
 
+    for i in range(len(name)):
+        name[i]=name[i].replace(test[0]+'/','')
+
     df = pd.DataFrame()
     df['mail'] = test_messages
     df['name'] = name
@@ -144,9 +147,9 @@ def test():
                 zf.extractall(path="Testset")
         data = converttest()
         model.preprocess(data,test)
-        score,xtrain2d,xtest2d,ins,out = model.Similarity()
+        score,xtrain2d,xtest2d,ins,out, dissimilar = model.Similarity()
         if(st.button("Test")):
-            model.test()
+            model.test(dissimilar)
             st.success("Done!!")
             st.markdown(get_binary_file_downloader_html('Result/result.csv', 'Result'), unsafe_allow_html=True)
             # st.markdown(get_binary_file_downloader_html('Test.zip', 'Result folder'), unsafe_allow_html=True)
@@ -155,7 +158,7 @@ def test():
         value = score,
         gauge = {'axis': {'range': [None, 100]}},
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "Similarity"}))
+        title = {'text': "Confidence Score"}))
         st.plotly_chart(fig)
         plt.plot(xtrain2d[:, 0], xtrain2d[:, 1], '+',label="train")
         plt.plot(xtest2d[ins, 0], xtest2d[ins, 1], '*',label="test inside")
