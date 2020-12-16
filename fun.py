@@ -106,7 +106,7 @@ def trainit():
     
     with st.beta_expander("Model 1 - TF-IDF Hyperparameters"):
         st.header("Model 1 - TF-IDF")
-        h1 = st.slider('N-gram', 2,10,5)
+        h1 = st.slider('N-gram', 1,10,2)
         h2 = st.text_input("N-Estimators", "100")
     placeholder1 = st.empty()
     placeholder2 = st.empty()
@@ -123,9 +123,8 @@ def trainit():
    
     if(st.button("Train")):
         with st.spinner(text='Training...'):
-            oob,cv,acc,loss = model.train(h1,int(h2),h3,h4,h5,int(h6))
+            cv,acc,loss = model.train(h1,int(h2),h3,h4,h5,int(h6))
             # time.sleep(5)
-        placeholder1.success("Out of Bag error: %.5f" % oob)
         placeholder2.success("Cross Validation Score: %.5f" % cv)
         placeholder3.success("Training accuracy: %.5f" % acc)
         placeholder4.success("Loss: %.5f" % loss)
@@ -163,9 +162,5 @@ def test():
         plt.plot(xtrain2d[:, 0], xtrain2d[:, 1], '+',label="train")
         plt.plot(xtest2d[ins, 0], xtest2d[ins, 1], '*',label="test inside")
         plt.plot(xtest2d[out, 0], xtest2d[out, 1], 'x',label="test outside")
-        plt.legend()
-        plt.show()   
+        plt.legend() 
         st.pyplot() 
-
-    
-
