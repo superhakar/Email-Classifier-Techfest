@@ -158,7 +158,7 @@ def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=1
   classifier.fit(new_X,y)
   filename = 'Model/model.sav'
   pickle.dump(classifier, open(filename, 'wb'))
-  model = RandomForestClassifier()
+  model = XGBClassifier(n_estimators=n_estimators)
   scores = cross_val_score(model, X, y, cv=5)
   crossval = np.mean(scores)
 
