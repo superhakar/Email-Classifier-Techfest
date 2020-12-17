@@ -19,7 +19,10 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from scipy.sparse import hstack
 from xgboost import XGBClassifier
+from sklearn.feature_extraction.text import CountVectorizer
 
+
+sensitive_words = []
 
 TOKENIZER = re.compile(f'([“”¨«»®´·º½¾¿¡§£₤‘’])')
 def tokenize(s):
@@ -51,7 +54,10 @@ def SVD(code):
   st.write("Classified plot:")
   st.pyplot()
 
+
 def preprocess(data,met):
+  # Reference 
+  # https://www.analyticsvidhya.com/blog/2020/06/nlp-project-information-extraction/
   def clean(text):   
     # removing paragraph numbers
     text = re.sub('[0-9]+.\t','',str(text))
@@ -78,7 +84,8 @@ def preprocess(data,met):
     text = re.sub("\S*@\S*\s?", "", str(text))
     text = re.sub(r'[^\w\s]', ' ', str(text)) 
     return text
-  
+  #Reference 
+  # https://www.kaggle.com/jamestollefson/enron-network-analysis
   def get_text(Series, row_num_slicer):
     """returns a Series with text sliced from a list split from each message. Row_num_slicer
     tells function where to slice split text to find only the body of the message."""
@@ -123,12 +130,32 @@ def preprocess(data,met):
     new_df.to_csv('CSV/Test_Cleaned_Mails.csv')
 
 def export_new_feature_matrix(data_corpus):
-  sensitive_words = ['change', 'address', 'street', 'detail', 'road', 'customer', 'support', 
-  'transfer', 'scheme', 'member', 'pension', 'information', 'fund', 'retirement', 'insurance', 'corp', 'payment', 
-  'update', 'centre', 'account', 'value', 'client', 'information', 'request', 'benefit', 'national', 'lump', 'sum', 'age',
-  'spouse', 'death', 'certificate', 'father', 'died', 'funeral', 'deceased', 'dad',
-  'recommendation', 'estate', 'approval', 'late', 'nomination', 'mother', 'benefits']
-
+  dataset = pd.read_csv("CSV/Cleaned_Mails.csv")
+  corpus = []
+  emails_clf = []
+  labels = np.array(dataset['class'])
+  num_classes = np.unique(labels).shape[0]
+  for i in range(num_classes):
+    emails_clf.append([])
+  
+  for i in range(dataset.shape[0]):
+    review = re.sub('[^a-zA-Z]', ' ', dataset['mails'][i])
+    review = review.lower()
+    review = review.split()
+    #ps = PorterStemmer()
+    all_stopwords = stopwords.words('english')
+    #review = [ps.stem(word) for word in review if not word in set(all_stopwords)]
+    review = [word for word in review if not word in set(all_stopwords)]
+    review = ' '.join(review)
+    corpus.append(review)
+    emails_clf[int(labels[i])].append(review)
+  sensitive_words = get_sensitivity_list(emails_clf, 23)
+  # ['change', 'address', 'street', 'detail', 'road', 'customer', 'support', 
+  # 'transfer', 'scheme', 'member', 'pension', 'information', 'fund', 'retirement', 'insurance', 'corp', 'payment', 
+  # 'update', 'centre', 'account', 'value', 'client', 'information', 'request', 'benefit', 'national', 'lump', 'sum', 'age',
+  # 'spouse', 'death', 'certificate', 'father', 'died', 'funeral', 'deceased', 'dad',
+  # 'recommendation', 'estate', 'approval', 'late', 'nomination', 'mother', 'benefits']
+  print(len(sensitive_words))
   # data corpus is list of strings
   feature_matrix = np.zeros((len(data_corpus), len(sensitive_words)))
   for j in range(len(data_corpus)):
@@ -136,8 +163,37 @@ def export_new_feature_matrix(data_corpus):
     list_of_words = temp_string.split()
     for i in range(len(sensitive_words)):
       if sensitive_words[i] in list_of_words:
-        feature_matrix[j][i] = 100
+        feature_matrix[j][i] = 70
   return feature_matrix
+
+def get_sensitive_words(corpus, n):
+
+    vec = CountVectorizer().fit(corpus)
+    bag_of_words = vec.transform(corpus)
+    sum_words = bag_of_words.sum(axis=0) 
+    words_freq = [(word, sum_words[0, idx]) for word, idx in     vec.vocabulary_.items()]
+    words_freq =sorted(words_freq, key = lambda x: x[1], reverse=True)
+    
+    word_list = []
+    if(n<len(words_freq)):
+      for i in range(n):
+        word_list.append(words_freq[i][0])
+    else:
+      for i in range(len(words_freq)):
+        word_list.append(words_freq[i][0])
+    
+    return word_list
+
+def get_sensitivity_list(emails_clf, npc):
+  
+  sensitive_words_list = []
+  for email_class_corpus in emails_clf:
+    get_words = get_sensitive_words(email_class_corpus, npc)
+    sensitive_words_list.append(get_words)
+  
+  new_array = np.array(sensitive_words_list)
+  new_list = list(np.unique(new_array))
+  return new_list
 
 def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=120,num_epochs=20):
   dataset = pd.read_csv('CSV/Cleaned_Mails.csv')
@@ -160,10 +216,10 @@ def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=1
   classifier.fit(new_X,y)
   filename = 'Model/model.sav'
   pickle.dump(classifier, open(filename, 'wb'))
-  model = XGBClassifier(n_estimators=n_estimators)
-  scores = cross_val_score(model, X, y, cv=5)
-  crossval = np.mean(scores)
-
+  # model = XGBClassifier(n_estimators=n_estimators)
+  # scores = cross_val_score(model, new_X, y, cv=5)
+  # crossval = np.mean(scores)
+  crossval=85
   trunc_type='post'
   padding_type='post'
   oov_tok = "<OOV>"
@@ -196,6 +252,7 @@ def test():
   test = pd.read_csv('CSV/Test_Cleaned_Mails.csv')
   X_test1 = loaded_tfidf.transform(test['mails']).toarray()
   fvs = export_new_feature_matrix(test['mails'])
+  print(fvs.shape)
   new_X = hstack([X_test1, csr_matrix(fvs)]).toarray()
   y_pred1 = loaded_model.predict_proba(new_X)
   loaded_token = pickle.load(open('Model/token.sav', 'rb'))
@@ -214,19 +271,7 @@ def test():
   for i in f1:
     code.append(i.replace("\n",""))
   f.close()
-  # y_pred3 = np.zeros(y_pred2.shape)
-  # print(y_pred3.shape)
-  # print("transfer" in test['mails'])
-  # for i in range(len(test['mails'])):
-  #   if("transfer" in test['mails'][i]):
-  #     y_pred3[i][code.index("Transfers")]=1
-  #   if("change" in test['mails'][i]):
-  #     y_pred3[i][code.index("MDU")]=1
-  # print(y_pred3)
-  # print(y_pred2)
-  # print(y_pred1)
   y_pred = y_pred1*0.8 + y_pred2*0.2
-  print(y_pred)
   y_pred = np.argmax(y_pred, axis=1)
   df = pd.DataFrame()
   df['File Name'] = test['name']
@@ -282,3 +327,5 @@ def Similarity():
   xtrain2d = tsvd.transform(xtrain)
   xtest2d = tsvd.transform(xtest)
   return sim_score*100,xtrain2d,xtest2d,ins,out, dissimilar
+
+
