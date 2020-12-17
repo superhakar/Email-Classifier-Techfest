@@ -172,17 +172,17 @@ def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=1
   training_padded = pad_sequences(training_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
   filename = 'Model/token.sav'
   pickle.dump(tokenizer, open(filename, 'wb'))
+  training_padded = np.array(training_padded)
+  training_labels = np.array(dataset['class'])
   model = tf.keras.Sequential([
     tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(50, return_sequences = True)),
     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(40)),
     tf.keras.layers.Dense(20, activation='relu'),
-    tf.keras.layers.Dense(3, activation='softmax')
+    tf.keras.layers.Dense(len(np.unique(training_labels)), activation='softmax')
   ])
   scce = tf.keras.losses.SparseCategoricalCrossentropy()
   model.compile(loss=scce,optimizer='adam',metrics=['accuracy'])
-  training_padded = np.array(training_padded)
-  training_labels = np.array(dataset['class'])
   history = model.fit(training_padded, training_labels, epochs=num_epochs, verbose=1)
   model.save('Model/')
   return crossval,history.history['accuracy'][-1],history.history['loss'][-1]
