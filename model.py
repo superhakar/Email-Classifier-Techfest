@@ -125,7 +125,9 @@ def preprocess(data,met):
 def export_new_feature_matrix(data_corpus):
   sensitive_words = ['change', 'address', 'street', 'detail', 'road', 'customer', 'support', 
   'transfer', 'scheme', 'member', 'pension', 'information', 'fund', 'retirement', 'insurance', 'corp', 'payment', 
-  'update', 'centre', 'account', 'value', 'client', 'information', 'request', 'benefit', 'national', 'lump', 'sum', 'age']
+  'update', 'centre', 'account', 'value', 'client', 'information', 'request', 'benefit', 'national', 'lump', 'sum', 'age',
+  'spouse', 'death', 'certificate', 'father', 'died', 'funeral', 'deceased', 'dad',
+  'recommendation', 'estate', 'approval', 'late', 'nomination', 'mother', 'benefits']
 
   # data corpus is list of strings
   feature_matrix = np.zeros((len(data_corpus), len(sensitive_words)))
@@ -137,13 +139,13 @@ def export_new_feature_matrix(data_corpus):
         feature_matrix[j][i] = 100
   return feature_matrix
 
-def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=120,num_epochs=25):
+def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=120,num_epochs=20):
   dataset = pd.read_csv('CSV/Cleaned_Mails.csv')
   tfidf = TfidfVectorizer(
         ngram_range=(1,ngram),
         tokenizer=tokenize,
-        min_df=3,
-        max_df=0.9,
+        min_df=1,
+        max_df=0.95,
         strip_accents='unicode',
         use_idf=True,
         smooth_idf=True,
@@ -187,7 +189,7 @@ def train(ngram=2,n_estimators=100,embedding_dim=20,vocab_size=1800,max_length=1
   model.save('Model/')
   return crossval,history.history['accuracy'][-1],history.history['loss'][-1]
 
-def test(dissimilar):
+def test():
   loaded_tfidf = pickle.load(open('Model/tfidf.sav', 'rb'))
   filename = 'Model/model.sav'
   loaded_model = pickle.load(open(filename, 'rb'))
@@ -223,7 +225,7 @@ def test(dissimilar):
   # print(y_pred3)
   # print(y_pred2)
   # print(y_pred1)
-  y_pred = y_pred1*0.9 + y_pred2*0.1
+  y_pred = y_pred1*0.8 + y_pred2*0.2
   print(y_pred)
   y_pred = np.argmax(y_pred, axis=1)
   df = pd.DataFrame()
@@ -232,7 +234,7 @@ def test(dissimilar):
   for i in range(len(y_pred)):
     ystr.append(code[int(y_pred[i])])
   df['Classified Category'] = ystr
-  df['Confidence'] = dissimilar
+  # df['Confidence'] = dissimilar
   df.to_csv('Result/result.csv', index = False)
 
 
