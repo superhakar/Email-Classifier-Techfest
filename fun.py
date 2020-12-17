@@ -125,7 +125,7 @@ def trainit():
         with st.spinner(text='Training...'):
             cv,acc,loss = model.train(h1,int(h2),h3,h4,h5,int(h6))
             # time.sleep(5)
-        placeholder2.success("Cross Validation Score: %.5f" % cv)
+        placeholder2.success("Training Successful")
         placeholder3.success("Training accuracy: %.5f" % acc)
         placeholder4.success("Loss: %.5f" % loss)
         # placeholder3.success("accuracy: 99%")
