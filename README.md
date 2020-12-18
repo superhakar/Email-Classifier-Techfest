@@ -13,7 +13,7 @@
 ![Upload train files](Pictures/upload.png?raw=true "Upload data to be trained")
 ### Viewing word clouds of selected class
 ![Upload train files](Pictures/mdu.png?raw=true "MDU word cloud")
-### 3D interactive visualization of how well each class of train data is clustered
+### 3D interactive visualization of how each class of train data is clustered
 ![Upload train files](Pictures/3dplot.png?raw=true "3D visualization")
 
 ## Tuning Hyperparameters and Training the models
