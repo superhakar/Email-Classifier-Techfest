@@ -116,7 +116,7 @@ def trainit():
         h3 = st.slider('Embedding_dim', 16,40,20)
         h4 = st.slider('vocab_size', 1000,2000,1800)
         h5 = st.slider('max_length', 80,140,120)
-        h6 = st.text_input("num_epochs", "25")
+        h6 = st.text_input("num_epochs", "20")
     placeholder3 = st.empty()
     placeholder4 = st.empty()
 
