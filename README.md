@@ -6,6 +6,6 @@
 
 # Running the program:
 * To run the UI
- * streamlit run app.py
+  * streamlit run app.py
 * To run the API server
- * uvicorn server:app
+  * uvicorn server:app
