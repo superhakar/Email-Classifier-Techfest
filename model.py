@@ -9,6 +9,7 @@ import pickle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import TruncatedSVD
 import matplotlib.pyplot as plt 
+from mpl_toolkits.mplot3d import Axes3D
 import streamlit as st
 from sklearn.model_selection import cross_val_score
 from sklearn.cluster import Birch
@@ -20,6 +21,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from scipy.sparse import hstack
 from xgboost import XGBClassifier
 from sklearn.feature_extraction.text import CountVectorizer
+import plotly.express as px
 
 
 sensitive_words = []
@@ -45,14 +47,19 @@ def SVD(code):
         sublinear_tf=True
     ).fit(df['mails'])
   X = tfidf_vectorizer.transform(df['mails'])
-  tsvd = TruncatedSVD(n_components=2)
+  tsvd = TruncatedSVD(n_components=3)
   tsvd.fit(X)
   X_tsvd = tsvd.transform(X)
-  for j in range(len(df['class'].unique())):
-    plt.scatter(X_tsvd[df['class'] == j, 0], X_tsvd[df['class'] == j, 1], label = code[j])
-  plt.legend()
+  x_tsvd = pd.DataFrame({'x': X_tsvd[:, 0], 'y': X_tsvd[:, 1], 'z': X_tsvd[:, 2]})
+  x_tsvd['class'] = df['class']
+  for i in range(len(df['class'])):
+    x_tsvd['class'][i] = code[int(df['class'][i])]
+  # for j in range(len(df['class'].unique())):
+  #   plt.scatter(X_tsvd[df['class'] == j, 0], X_tsvd[df['class'] == j, 1], X_tsvd[df['class'] == j, 2], label = code[j])
+  # plt.legend()
   st.write("Classified plot:")
-  st.pyplot()
+  fig = px.scatter_3d(x_tsvd, x='x', y='y', z='z', color='class',width=650, height=650)
+  st.plotly_chart(fig)
 
 
 def preprocess(data,met):
@@ -304,7 +311,7 @@ def Similarity():
 
   xtrain = tfidf_vectorizer.transform(train_df['mails']) 
   xtest = tfidf_vectorizer.transform(test_df['mails'])
-  birch = Birch(n_clusters=None, threshold=0.9, branching_factor=50)
+  birch = Birch(n_clusters=None, threshold=0.93, branching_factor=50)
   birch.fit(xtrain)
   birch.partial_fit(xtest)
   set_diff = set(np.unique(birch.predict(xtest))) - set(np.unique(birch.predict(xtrain))) 
