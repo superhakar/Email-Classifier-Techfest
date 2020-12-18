@@ -1,14 +1,11 @@
-# Pre-requirements:
-* Must have **streamlit**
-  * command to install streamlit - **pip install streamlit**
-# Instructions to use our Program:
+# Installing pre-requisites:
+* pip install -r requirements.txt
+
+# Instructions to follow before running our Program:
 * create folders named Code , CSV , Testset , Dataset , Model , Result
-* Run the program:
-  * streamlit run app.py
-## create folders named Code , CSV , Testset , Dataset , Model , Result
-## To install requirements
-## pip install -r requirements.txt
-## To run use UI
-## streamlit run app.py
-## To run API server
-## uvicorn server:app
+
+# Running the program:
+* To run the UI
+ * streamlit run app.py
+* To run the API server
+ * uvicorn server:app
