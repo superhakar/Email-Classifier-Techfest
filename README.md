@@ -28,4 +28,5 @@
 * Check confidence score (If score is low, one needs to retrain the model on the test data)
 * Predict (Test)
 * Download prediction result
+
 ![Upload train files](Pictures/test+confidence.png?raw=true "Upload Data, Confidence Score, Predict (Test), Download Result")
